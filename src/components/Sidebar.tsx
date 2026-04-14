@@ -5,9 +5,12 @@ import {
   Package, 
   FileText, 
   Brain, 
+  Users,
+  Megaphone,
   User,
   LogOut
 } from 'lucide-react';
+import path from 'node:path';
 
 interface SidebarProps {
   onLogout?: () => void;
@@ -22,6 +25,10 @@ export default function Sidebar({ onLogout }: SidebarProps) {
     { path: '/inventory', icon: Package, label: 'Inventory' },
     { path: '/reports', icon: FileText, label: 'Reports' },
     { path: '/ai-guidance', icon: Brain, label: 'AI Guidance' },
+    {path: '/marketing', icon: Megaphone, label: 'Marketing'},
+    { path: '/community', icon: Users, label: 'Community' },
+    
+    
     { path: '/profile', icon: User, label: 'Profile' },
   ];
   

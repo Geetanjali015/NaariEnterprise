@@ -10,25 +10,59 @@ interface RegisterProps {
 export default function Register({ onRegister }: RegisterProps) {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    fullName: '',
+    full_name: '',
     email: '',
     phone: '',
-    businessType: '',
+    business_type: '',
     city: '',
     password: '',
+    business_name: '',
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
+    setError('');
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onRegister();
-    navigate('/dashboard');
+    setLoading(true);
+    setError('');
+    
+    try {
+      const response = await fetch('http://localhost:5001/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        setError(data.message || 'Registration failed');
+        setLoading(false);
+        return;
+      }
+      
+      // Save token and user data to localStorage
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      
+      onRegister();
+      navigate('/dashboard');
+    } catch (err) {
+      setError('Failed to register. Please try again.');
+      console.error('Registration error:', err);
+    } finally {
+      setLoading(false);
+    }
   };
   
   return (
@@ -47,20 +81,26 @@ export default function Register({ onRegister }: RegisterProps) {
             <p className="text-[var(--color-gray-600)] text-sm">Join thousands of successful women entrepreneurs</p>
           </div>
           
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              {error}
+            </div>
+          )}
+          
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid md:grid-cols-2 gap-5">
               <div>
-                <label htmlFor="fullName" className="block text-sm font-medium text-[var(--color-gray-700)] mb-2">
+                <label htmlFor="full_name" className="block text-sm font-medium text-[var(--color-gray-700)] mb-2">
                   Full Name
                 </label>
                 <input
                   type="text"
-                  id="fullName"
-                  name="fullName"
-                  value={formData.fullName}
+                  id="full_name"
+                  name="full_name"
+                  value={formData.full_name}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-[var(--color-gray-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-teal)]"
-                  placeholder="Priya Sharma"
+                  placeholder="Name"
                   required
                 />
               </div>
@@ -76,7 +116,7 @@ export default function Register({ onRegister }: RegisterProps) {
                   value={formData.email}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-[var(--color-gray-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-teal)]"
-                  placeholder="priya@example.com"
+                  placeholder="name@example.com"
                   required
                 />
               </div>
@@ -117,13 +157,13 @@ export default function Register({ onRegister }: RegisterProps) {
             </div>
             
             <div>
-              <label htmlFor="businessType" className="block text-sm font-medium text-[var(--color-gray-700)] mb-2">
+              <label htmlFor="business_type" className="block text-sm font-medium text-[var(--color-gray-700)] mb-2">
                 Business Type
               </label>
               <select
-                id="businessType"
-                name="businessType"
-                value={formData.businessType}
+                id="business_type"
+                name="business_type"
+                value={formData.business_type}
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-[var(--color-gray-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-teal)]"
                 required
@@ -167,9 +207,9 @@ export default function Register({ onRegister }: RegisterProps) {
               </label>
             </div>
             
-            <Button type="submit" variant="primary" size="lg" className="w-full">
+            <Button type="submit" variant="primary" size="lg" className="w-full" disabled={loading}>
               <UserPlus size={20} className="mr-2" />
-              Create Account
+              {loading ? 'Creating Account...' : 'Create Account'}
             </Button>
           </form>
           

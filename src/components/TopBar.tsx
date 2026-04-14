@@ -5,7 +5,7 @@ interface TopBarProps {
   userName?: string;
 }
 
-export default function TopBar({ title, userName = 'Priya Sharma' }: TopBarProps) {
+export default function TopBar({ title, userName = 'Geetanjali Reddy' }: TopBarProps) {
   return (
     <div className="bg-white border-b border-[var(--color-gray-200)] px-8 py-4 flex items-center justify-between">
       <div>
@@ -30,7 +30,7 @@ export default function TopBar({ title, userName = 'Priya Sharma' }: TopBarProps
         <div className="flex items-center gap-3">
           <div className="text-right">
             <p className="text-sm font-medium text-[var(--color-gray-900)]">{userName}</p>
-            <p className="text-xs text-[var(--color-gray-600)]">Business Owner</p>
+            <p className="text-xs text-[var(--color-gray-600)]">Food</p>
           </div>
           <div className="w-10 h-10 bg-[var(--color-teal)] rounded-full flex items-center justify-center text-white font-medium">
             {userName.charAt(0)}

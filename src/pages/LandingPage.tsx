@@ -58,10 +58,22 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl text-[var(--color-navy)]">NaariEnterprise</h2>
-            <p className="text-xs text-[var(--color-gray-600)]">AI-Powered Platform for Women Entrepreneurs</p>
-          </div>
+          <div className="flex items-center gap-3">
+
+  <img
+    src="/images/logo2.png"
+    alt="NaariEnterprise Logo"
+    className="h-20 w-auto"
+  />
+  <div>
+    <h2 className="text-2xl font-semibold text-[var(--color-navy)]">
+      NaariEnterprise
+    </h2>
+    <p className="text-xs text-[var(--color-gray-600)]">
+      AI-Powered Platform for Women Entrepreneurs
+    </p>
+  </div>
+</div>
           <div className="flex items-center gap-4">
             <Button variant="outline" size="sm" onClick={() => navigate('/login')}>
               Login
@@ -74,26 +86,45 @@ export default function LandingPage() {
       </nav>
       
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-[var(--color-navy)] to-[var(--color-navy-light)] text-white py-24">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="max-w-3xl">
-            <h1 className="text-white mb-6">Run Your Business With Intelligence & Confidence</h1>
-            <p className="text-xl text-[var(--color-gray-300)] mb-8 leading-relaxed">
-              All-in-one AI-powered business management platform designed for women entrepreneurs
-              who demand professional tools and actionable insights.
-            </p>
-            <div className="flex items-center gap-4">
-              <Button variant="secondary" size="lg" onClick={() => navigate('/register')}>
-                Get Started
-                <ArrowRight className="ml-2" size={20} />
-              </Button>
-              <Button variant="outline" size="lg" onClick={() => navigate('/dashboard')}>
-                View Demo
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+<section className="bg-gradient-to-br from-[var(--color-navy)] to-[var(--color-navy-light)] text-white py-24">
+<div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 items-center gap-12">
+    {/* LEFT SIDE */}
+    <div>
+      <h1 className="text-white mb-6">
+        Run Your Business With Intelligence & Confidence
+      </h1>
+
+      <p className="text-xl text-[var(--color-gray-300)] mb-8 leading-relaxed">
+        All-in-one AI-powered business management platform designed for women entrepreneurs
+        who demand professional tools and actionable insights.
+      </p>
+
+      <div className="flex items-center gap-4">
+        <Button variant="secondary" size="lg" onClick={() => navigate('/register')}>
+          Get Started
+          <ArrowRight className="ml-2" size={20} />
+        </Button>
+
+        <Button variant="outline" size="lg" onClick={() => navigate('/dashboard')}>
+          View Demo
+        </Button>
+      </div>
+    </div>
+
+    {/* RIGHT SIDE IMAGE */}
+<div className="relative flex justify-end items-center">
+  <img
+    src="/images/woman.png"
+    alt="Woman Entrepreneur"
+    className="w-[600px] max-w-none"
+  />
+
+  {/* fade effect */}
+  <div className="absolute left-0 top-0 h-full w-32 bg-gradient-to-r from-[var(--color-navy)] to-transparent"></div>
+</div>
+
+  </div>
+</section>
       
       {/* Features Section */}
       <section className="py-20">

@@ -12,11 +12,47 @@ export default function Login({ onLogin }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin();
-    navigate('/dashboard');
+    setLoading(true);
+    setError('');
+    
+    try {
+      const response = await fetch('http://localhost:5001/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        setError(data.message || 'Login failed');
+        setLoading(false);
+        return;
+      }
+      
+      // Save token and user data to localStorage
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      
+      if (rememberMe) {
+        localStorage.setItem('rememberMe', 'true');
+      }
+      
+      onLogin();
+      navigate('/dashboard');
+    } catch (err) {
+      setError('Failed to login. Please try again.');
+      console.error('Login error:', err);
+    } finally {
+      setLoading(false);
+    }
   };
   
   return (
@@ -34,6 +70,12 @@ export default function Login({ onLogin }: LoginProps) {
             <h3 className="mb-2">Sign In</h3>
             <p className="text-[var(--color-gray-600)] text-sm">Enter your credentials to access your account</p>
           </div>
+          
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              {error}
+            </div>
+          )}
           
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
@@ -81,9 +123,9 @@ export default function Login({ onLogin }: LoginProps) {
               </a>
             </div>
             
-            <Button type="submit" variant="primary" size="lg" className="w-full">
+            <Button type="submit" variant="primary" size="lg" className="w-full" disabled={loading}>
               <LogIn size={20} className="mr-2" />
-              Sign In
+              {loading ? 'Signing In...' : 'Sign In'}
             </Button>
           </form>
           

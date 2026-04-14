@@ -1,10 +1,31 @@
+import { useEffect, useState } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import { TrendingUp, TrendingDown, Package, AlertCircle, Plus, ArrowUpRight } from 'lucide-react';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
+interface UserData {
+  id?: number;
+  full_name?: string;
+  email?: string;
+  business_type?: string;
+  business_name?: string;
+}
+
 export default function Dashboard() {
+  const [user, setUser] = useState<UserData | null>(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (err) {
+        console.error('Failed to parse user data:', err);
+      }
+    }
+  }, []);
   const performanceData = [
     { month: 'Jan', revenue: 45000, expenses: 32000 },
     { month: 'Feb', revenue: 52000, expenses: 35000 },
@@ -26,9 +47,18 @@ export default function Dashboard() {
     { name: 'Packaging Boxes', current: 45, minimum: 50 },
     { name: 'Organic Spices Mix', current: 8, minimum: 15 },
   ];
-  
   return (
-    <DashboardLayout title="Dashboard">
+    <DashboardLayout title={`Dashboard - ${user?.full_name || 'Welcome'}`}>
+
+      {/* User Greeting */}
+      {user && (
+        <div className="mb-6 p-4 bg-gradient-to-r from-[var(--color-teal)] to-[var(--color-teal-light)] rounded-lg text-white">
+          <h2 className="text-xl font-bold">Welcome back, {user.full_name}! 👋</h2>
+          <p className="text-sm opacity-90">{user.business_type ? `Business Type: ${user.business_type}` : 'Setup your business profile'}</p>
+        </div>
+      )}
+      
+      
       {/* Quick Stats */}
       <div className="grid md:grid-cols-4 gap-6 mb-8">
         <Card>

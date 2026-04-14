@@ -1,28 +1,214 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import StatusBadge from '../components/StatusBadge';
 import { Plus, Filter, Download, TrendingUp, TrendingDown } from 'lucide-react';
 
+interface Transaction {
+  id: number;
+  date: string;
+  type: 'income' | 'expense';
+  category: string;
+  description: string;
+  amount: number;
+}
+
 export default function IncomeExpense() {
   const [showAddModal, setShowAddModal] = useState(false);
-  const [transactionType, setTransactionType] = useState<'income' | 'expense'>('income');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [summary, setSummary] = useState({ totalIncome: 0, totalExpense: 0, profit: 0, margin: 0 });
+  const [editingId, setEditingId] = useState<number | null>(null);
   
-  const transactions = [
-    { id: 1, date: '2026-01-09', type: 'Income', category: 'Product Sales', description: 'Fashion accessories sale', amount: 12500 },
-    { id: 2, date: '2026-01-08', type: 'Expense', category: 'Inventory', description: 'Fabric purchase', amount: 8000 },
-    { id: 3, date: '2026-01-08', type: 'Income', category: 'Service', description: 'Consultation fee', amount: 5500 },
-    { id: 4, date: '2026-01-07', type: 'Expense', category: 'Marketing', description: 'Social media ads', amount: 2000 },
-    { id: 5, date: '2026-01-07', type: 'Income', category: 'Product Sales', description: 'Online order', amount: 8200 },
-    { id: 6, date: '2026-01-06', type: 'Expense', category: 'Operations', description: 'Rent payment', amount: 15000 },
-    { id: 7, date: '2026-01-05', type: 'Income', category: 'Product Sales', description: 'Wholesale order', amount: 25000 },
-    { id: 8, date: '2026-01-05', type: 'Expense', category: 'Utilities', description: 'Electricity bill', amount: 1800 },
-  ];
-  
-  const totalIncome = transactions.filter(t => t.type === 'Income').reduce((sum, t) => sum + t.amount, 0);
-  const totalExpense = transactions.filter(t => t.type === 'Expense').reduce((sum, t) => sum + t.amount, 0);
-  const netProfit = totalIncome - totalExpense;
+  const [formData, setFormData] = useState({
+    type: 'income' as 'income' | 'expense',
+    amount: '',
+    category: 'Product Sales',
+    description: '',
+    date: new Date().toISOString().split('T')[0],
+  });
+
+  const handleFormChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleEditTransaction = (transaction: Transaction) => {
+    setEditingId(transaction.id);
+    setFormData({
+      type: transaction.type,
+      amount: transaction.amount.toString(),
+      category: transaction.category,
+      description: transaction.description,
+      date: transaction.date,
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateTransaction = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!editingId) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`http://localhost:5001/transactions/${editingId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          type: formData.type,
+          amount: parseFloat(formData.amount),
+          category: formData.category,
+          description: formData.description,
+          date: formData.date,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to update transaction');
+
+      await fetchTransactions();
+      await fetchSummary();
+      
+      setFormData({
+        type: 'income',
+        amount: '',
+        category: 'Product Sales',
+        description: '',
+        date: new Date().toISOString().split('T')[0],
+      });
+      setEditingId(null);
+      setShowEditModal(false);
+    } catch (err) {
+      setError('Failed to update transaction');
+      console.error('Error:', err);
+    }
+  };
+
+  const handleDeleteTransaction = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this transaction?')) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`http://localhost:5001/transactions/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) throw new Error('Failed to delete transaction');
+
+      await fetchTransactions();
+      await fetchSummary();
+    } catch (err) {
+      setError('Failed to delete transaction');
+      console.error('Error:', err);
+    }
+  };
+
+  // Fetch transactions
+  useEffect(() => {
+    fetchTransactions();
+    fetchSummary();
+  }, []);
+
+  const fetchTransactions = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5001/transactions', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch transactions');
+      
+      const data = await response.json();
+      setTransactions(data);
+    } catch (err) {
+      setError('Failed to load transactions');
+      console.error('Fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchSummary = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5001/transactions/summary', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch summary');
+      
+      const data = await response.json();
+      setSummary(data);
+    } catch (err) {
+      console.error('Summary error:', err);
+    }
+  };
+
+  const handleAddTransaction = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch('http://localhost:5001/transactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          type: formData.type,
+          amount: parseFloat(formData.amount),
+          category: formData.category,
+          description: formData.description,
+          date: formData.date,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to add transaction');
+
+      // Refresh data
+      await fetchTransactions();
+      await fetchSummary();
+      
+      // Reset form
+      setFormData({
+        type: 'income',
+        amount: '',
+        category: 'Product Sales',
+        description: '',
+        date: new Date().toISOString().split('T')[0],
+      });
+      
+      setShowAddModal(false);
+    } catch (err) {
+      setError('Failed to add transaction');
+      console.error('Error:', err);
+    }
+  };
+
+  const categories = {
+    income: ['Product Sales', 'Service', 'Consulting', 'Other Income'],
+    expense: ['Inventory', 'Marketing', 'Operations', 'Utilities', 'Other Expense'],
+  };
+
+  if (loading) {
+    return <DashboardLayout title="Income & Expense Management"><div>Loading...</div></DashboardLayout>;
+  }
   
   return (
     <DashboardLayout title="Income & Expense Management">
@@ -32,7 +218,7 @@ export default function IncomeExpense() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm text-[var(--color-gray-600)] mb-1">Total Income</p>
-              <h3 className="mb-2">₹{totalIncome.toLocaleString()}</h3>
+              <h3 className="mb-2">₹{summary.totalIncome.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</h3>
               <div className="flex items-center gap-1 text-sm text-green-600">
                 <TrendingUp size={16} />
                 <span>This month</span>
@@ -48,7 +234,7 @@ export default function IncomeExpense() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm text-[var(--color-gray-600)] mb-1">Total Expenses</p>
-              <h3 className="mb-2">₹{totalExpense.toLocaleString()}</h3>
+              <h3 className="mb-2">₹{summary.totalExpense.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</h3>
               <div className="flex items-center gap-1 text-sm text-red-600">
                 <TrendingDown size={16} />
                 <span>This month</span>
@@ -64,10 +250,10 @@ export default function IncomeExpense() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm text-[var(--color-gray-600)] mb-1">Net Profit</p>
-              <h3 className="mb-2">₹{netProfit.toLocaleString()}</h3>
+              <h3 className="mb-2">₹{summary.profit.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</h3>
               <div className="flex items-center gap-1 text-sm text-[var(--color-teal)]">
                 <TrendingUp size={16} />
-                <span>{((netProfit / totalIncome) * 100).toFixed(1)}% margin</span>
+                <span>{summary.margin}% margin</span>
               </div>
             </div>
             <div className="w-12 h-12 bg-[var(--color-teal)] bg-opacity-10 rounded-lg flex items-center justify-center">
@@ -114,19 +300,32 @@ export default function IncomeExpense() {
                 <tr key={transaction.id} className="border-b border-[var(--color-gray-100)] hover:bg-[var(--color-gray-50)]">
                   <td className="py-4 px-4 text-sm text-[var(--color-gray-700)]">{transaction.date}</td>
                   <td className="py-4 px-4">
-                    <StatusBadge status={transaction.type === 'Income' ? 'success' : 'error'}>
-                      {transaction.type}
+                    <StatusBadge status={transaction.type === 'income' ? 'success' : 'error'}>
+                      {transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
                     </StatusBadge>
                   </td>
                   <td className="py-4 px-4 text-sm text-[var(--color-gray-700)]">{transaction.category}</td>
                   <td className="py-4 px-4 text-sm text-[var(--color-gray-700)]">{transaction.description}</td>
                   <td className={`py-4 px-4 text-sm text-right font-medium ${
-                    transaction.type === 'Income' ? 'text-green-600' : 'text-red-600'
+                    transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
                   }`}>
-                    {transaction.type === 'Income' ? '+' : '-'}₹{transaction.amount.toLocaleString()}
+                    {transaction.type === 'income' ? '+' : '-'}₹{transaction.amount.toLocaleString()}
                   </td>
                   <td className="py-4 px-4 text-center">
-                    <button className="text-[var(--color-teal)] hover:underline text-sm">Edit</button>
+                    <div className="flex items-center justify-center gap-2">
+                      <button 
+                        onClick={() => handleEditTransaction(transaction)}
+                        className="text-[var(--color-teal)] hover:underline text-sm"
+                      >
+                        Edit
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteTransaction(transaction.id)}
+                        className="text-red-600 hover:underline text-sm"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -135,13 +334,14 @@ export default function IncomeExpense() {
         </div>
       </Card>
       
-      {/* Add Transaction Modal */}
-      {showAddModal && (
+      
+      {/* Edit Transaction Modal */}
+      {showEditModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-6">
           <Card className="max-w-lg w-full" padding="lg">
-            <h3 className="mb-6">Add New Transaction</h3>
+            <h3 className="mb-6">Edit Transaction</h3>
             
-            <form className="space-y-5">
+            <form onSubmit={handleUpdateTransaction} className="space-y-5">
               <div>
                 <label className="block text-sm font-medium text-[var(--color-gray-700)] mb-2">
                   Transaction Type
@@ -149,9 +349,9 @@ export default function IncomeExpense() {
                 <div className="flex gap-3">
                   <button
                     type="button"
-                    onClick={() => setTransactionType('income')}
+                    onClick={() => handleFormChange('type', 'income')}
                     className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${
-                      transactionType === 'income'
+                      formData.type === 'income'
                         ? 'border-green-500 bg-green-50 text-green-700'
                         : 'border-[var(--color-gray-300)] hover:border-[var(--color-gray-400)]'
                     }`}
@@ -160,9 +360,139 @@ export default function IncomeExpense() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setTransactionType('expense')}
+                    onClick={() => handleFormChange('type', 'expense')}
                     className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${
-                      transactionType === 'expense'
+                      formData.type === 'expense'
+                        ? 'border-red-500 bg-red-50 text-red-700'
+                        : 'border-[var(--color-gray-300)] hover:border-[var(--color-gray-400)]'
+                    }`}
+                  >
+                    Expense
+                  </button>
+                </div>
+              </div>
+              
+              <div>
+                <label htmlFor="edit-category" className="block text-sm font-medium text-[var(--color-gray-700)] mb-2">
+                  Category
+                </label>
+                <select
+                  id="edit-category"
+                  value={formData.category}
+                  onChange={(e) => handleFormChange('category', e.target.value)}
+                  className="w-full px-4 py-3 border border-[var(--color-gray-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-teal)]"
+                >
+                  {formData.type === 'income' ? (
+                    <>
+                      <option>Product Sales</option>
+                      <option>Service</option>
+                      <option>Consulting</option>
+                      <option>Other Income</option>
+                    </>
+                  ) : (
+                    <>
+                      <option>Inventory</option>
+                      <option>Marketing</option>
+                      <option>Operations</option>
+                      <option>Utilities</option>
+                      <option>Other Expense</option>
+                    </>
+                  )}
+                </select>
+              </div>
+              
+              <div>
+                <label htmlFor="edit-amount" className="block text-sm font-medium text-[var(--color-gray-700)] mb-2">
+                  Amount (₹)
+                </label>
+                <input
+                  type="number"
+                  id="edit-amount"
+                  value={formData.amount}
+                  onChange={(e) => handleFormChange('amount', e.target.value)}
+                  className="w-full px-4 py-3 border border-[var(--color-gray-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-teal)]"
+                  placeholder="0.00"
+                  step="0.01"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="edit-description" className="block text-sm font-medium text-[var(--color-gray-700)] mb-2">
+                  Description
+                </label>
+                <textarea
+                  id="edit-description"
+                  value={formData.description}
+                  onChange={(e) => handleFormChange('description', e.target.value)}
+                  rows={3}
+                  className="w-full px-4 py-3 border border-[var(--color-gray-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-teal)]"
+                  placeholder="Add transaction details..."
+                ></textarea>
+              </div>
+              
+              <div>
+                <label htmlFor="edit-date" className="block text-sm font-medium text-[var(--color-gray-700)] mb-2">
+                  Date
+                </label>
+                <input
+                  type="date"
+                  id="edit-date"
+                  value={formData.date}
+                  onChange={(e) => handleFormChange('date', e.target.value)}
+                  className="w-full px-4 py-3 border border-[var(--color-gray-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-teal)]"
+                />
+              </div>
+              
+              <div className="flex gap-3 pt-4">
+                <Button type="submit" variant="primary" size="md" className="flex-1">
+                  Update Transaction
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="md"
+                  className="flex-1"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingId(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
+      
+      {/* Add Transaction Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-6">
+          <Card className="max-w-lg w-full" padding="lg">
+            <h3 className="mb-6">Add New Transaction</h3>
+            
+            <form onSubmit={handleAddTransaction} className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-gray-700)] mb-2">
+                  Transaction Type
+                </label>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleFormChange('type', 'income')}
+                    className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${
+                      formData.type === 'income'
+                        ? 'border-green-500 bg-green-50 text-green-700'
+                        : 'border-[var(--color-gray-300)] hover:border-[var(--color-gray-400)]'
+                    }`}
+                  >
+                    Income
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleFormChange('type', 'expense')}
+                    className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${
+                      formData.type === 'expense'
                         ? 'border-red-500 bg-red-50 text-red-700'
                         : 'border-[var(--color-gray-300)] hover:border-[var(--color-gray-400)]'
                     }`}
@@ -178,12 +508,14 @@ export default function IncomeExpense() {
                 </label>
                 <select
                   id="category"
+                  value={formData.category}
+                  onChange={(e) => handleFormChange('category', e.target.value)}
                   className="w-full px-4 py-3 border border-[var(--color-gray-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-teal)]"
                 >
-                  {transactionType === 'income' ? (
+                  {formData.type === 'income' ? (
                     <>
                       <option>Product Sales</option>
-                      <option>Service Revenue</option>
+                      <option>Service</option>
                       <option>Consulting</option>
                       <option>Other Income</option>
                     </>
@@ -193,7 +525,6 @@ export default function IncomeExpense() {
                       <option>Marketing</option>
                       <option>Operations</option>
                       <option>Utilities</option>
-                      <option>Salaries</option>
                       <option>Other Expense</option>
                     </>
                   )}
@@ -207,8 +538,11 @@ export default function IncomeExpense() {
                 <input
                   type="number"
                   id="amount"
+                  value={formData.amount}
+                  onChange={(e) => handleFormChange('amount', e.target.value)}
                   className="w-full px-4 py-3 border border-[var(--color-gray-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-teal)]"
                   placeholder="0.00"
+                  step="0.01"
                 />
               </div>
               
@@ -218,6 +552,8 @@ export default function IncomeExpense() {
                 </label>
                 <textarea
                   id="description"
+                  value={formData.description}
+                  onChange={(e) => handleFormChange('description', e.target.value)}
                   rows={3}
                   className="w-full px-4 py-3 border border-[var(--color-gray-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-teal)]"
                   placeholder="Add transaction details..."
@@ -231,6 +567,8 @@ export default function IncomeExpense() {
                 <input
                   type="date"
                   id="date"
+                  value={formData.date}
+                  onChange={(e) => handleFormChange('date', e.target.value)}
                   className="w-full px-4 py-3 border border-[var(--color-gray-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-teal)]"
                 />
               </div>

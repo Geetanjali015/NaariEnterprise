@@ -8,6 +8,15 @@ import IncomeExpense from './pages/IncomeExpense';
 import Inventory from './pages/Inventory';
 import Reports from './pages/Reports';
 import AIGuidance from './pages/AIGuidance';
+import AIInsights from './pages/AIInsights';
+import AILoan from './pages/AILoan';
+import AIRecommendations from './pages/AIRecommendations';
+import AIChecklist from './pages/AIChecklist';
+import AISchemes from './pages/AISchemes';
+import AIHealth from './pages/AIHealth';
+import Community from './pages/Community';
+import Marketing from './pages/Marketing';
+
 import Profile from './pages/Profile';
 
 function App() {
@@ -63,6 +72,71 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/ai-insights"
+          element={
+            <ProtectedRoute>
+              <AIInsights />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ai-loan"
+          element={
+            <ProtectedRoute>
+              <AILoan />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ai-recommendations"
+          element={
+            <ProtectedRoute>
+              <AIRecommendations />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ai-checklist"
+          element={
+            <ProtectedRoute>
+              <AIChecklist />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ai-schemes"
+          element={
+            <ProtectedRoute>
+              <AISchemes />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ai-health"
+          element={
+            <ProtectedRoute>
+              <AIHealth />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/marketing"
+          element={
+            <ProtectedRoute>
+              <Marketing />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/community"
+          element={
+            <ProtectedRoute>
+              <Community />
+            </ProtectedRoute>
+          }
+        />
+      
         <Route
           path="/profile"
           element={

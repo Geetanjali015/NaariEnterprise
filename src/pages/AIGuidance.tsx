@@ -1,300 +1,226 @@
+import { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import Card from '../components/Card';
-import Button from '../components/Button';
-import { Brain, TrendingUp, CheckCircle, AlertCircle, ExternalLink, Lightbulb, Target } from 'lucide-react';
+import StatusBadge from '../components/StatusBadge';
+import { useNavigate } from 'react-router-dom';
+import { BarChart3, Lightbulb, Zap, CheckSquare, TrendingUp, DollarSign, Activity, Target } from 'lucide-react';
 
 export default function AIGuidance() {
-  const loanEligibility = {
-    eligible: true,
-    amount: 500000,
-    score: 78,
-    factors: [
-      { name: 'Business Revenue', status: 'good', description: 'Consistent monthly revenue growth' },
-      { name: 'Credit History', status: 'good', description: 'Strong repayment track record' },
-      { name: 'Business Age', status: 'moderate', description: '2 years in operation' },
-      { name: 'Documentation', status: 'good', description: 'All documents complete' },
-    ]
+  const navigate = useNavigate();
+  const [dashboard, setDashboard] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDashboard();
+  }, []);
+
+  const fetchDashboard = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5001/ai/dashboard', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error('Failed to fetch dashboard');
+      const data = await response.json();
+      setDashboard(data);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
-  
-  const governmentSchemes = [
-    {
-      name: 'MUDRA Yojana',
-      type: 'Loan Scheme',
-      eligibility: 'High',
-      maxAmount: '₹10 Lakhs',
-      description: 'Micro-units development refinance scheme for small businesses',
-      link: '#'
-    },
-    {
-      name: 'Stand-Up India',
-      type: 'Credit Support',
-      eligibility: 'Medium',
-      maxAmount: '₹1 Crore',
-      description: 'Loans for women entrepreneurs in manufacturing, services, or trading',
-      link: '#'
-    },
-    {
-      name: 'CGTMSE',
-      type: 'Credit Guarantee',
-      eligibility: 'High',
-      maxAmount: '₹2 Crore',
-      description: 'Collateral-free loans for MSMEs',
-      link: '#'
-    },
-    {
-      name: 'Mahila Udyam Nidhi Scheme',
-      type: 'Subsidy',
-      eligibility: 'High',
-      maxAmount: '₹10 Lakhs',
-      description: 'Special scheme for women entrepreneurs with subsidy benefits',
-      link: '#'
-    }
-  ];
-  
-  const recommendations = [
-    {
-      category: 'Cost Optimization',
-      priority: 'high',
-      insights: [
-        'Reduce inventory holding costs by optimizing stock levels',
-        'Negotiate better rates with current suppliers (potential 12% savings)',
-        'Consider bulk purchasing for frequently used materials'
-      ]
-    },
-    {
-      category: 'Revenue Growth',
-      priority: 'high',
-      insights: [
-        'Expand product line based on best-sellers analysis',
-        'Increase marketing budget for high-performing categories',
-        'Target online sales channels to reach wider audience'
-      ]
-    },
-    {
-      category: 'Operations',
-      priority: 'medium',
-      insights: [
-        'Automate invoice generation to save 5 hours/week',
-        'Implement inventory alert system for better stock management',
-        'Consider hiring part-time help during peak seasons'
-      ]
-    }
-  ];
-  
-  const growthChecklist = [
-    { task: 'Register for GST', completed: true },
-    { task: 'Open business bank account', completed: true },
-    { task: 'Set up digital payment systems', completed: true },
-    { task: 'Create social media presence', completed: false },
-    { task: 'Build professional website', completed: false },
-    { task: 'Apply for MSME registration', completed: false },
-    { task: 'Explore export opportunities', completed: false },
-  ];
-  
-  const completedTasks = growthChecklist.filter(t => t.completed).length;
-  const progressPercentage = (completedTasks / growthChecklist.length) * 100;
-  
-  return (
-    <DashboardLayout title="AI Financial Guidance">
-      {/* AI Insights Header */}
-      <Card className="mb-8" padding="lg">
-        <div className="flex items-start gap-4">
-          <div className="w-16 h-16 bg-[var(--color-teal)] bg-opacity-10 rounded-xl flex items-center justify-center flex-shrink-0">
-            <Brain size={32} className="text-[var(--color-teal)]" />
-          </div>
-          <div className="flex-1">
-            <h3 className="mb-2">AI-Powered Business Intelligence</h3>
-            <p className="text-[var(--color-gray-600)] mb-4">
-              Our AI analyzes your business data to provide personalized recommendations, 
-              financial insights, and growth opportunities tailored specifically for your business.
-            </p>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <CheckCircle size={20} className="text-green-600" />
-                <span className="text-sm text-[var(--color-gray-700)]">12 Active Insights</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <TrendingUp size={20} className="text-[var(--color-teal)]" />
-                <span className="text-sm text-[var(--color-gray-700)]">23% Growth Potential</span>
-              </div>
-            </div>
+
+  if (loading) {
+    return (
+      <DashboardLayout title="AI Guidance">
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading your AI insights...</p>
           </div>
         </div>
-      </Card>
-      
-      {/* Loan Eligibility */}
-      <div className="grid lg:grid-cols-3 gap-6 mb-8">
-        <Card className="lg:col-span-2" padding="lg">
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <h3 className="mb-1">Loan Eligibility Analysis</h3>
-              <p className="text-sm text-[var(--color-gray-600)]">Based on your business performance</p>
-            </div>
-            <div className={`px-4 py-2 rounded-lg ${loanEligibility.eligible ? 'bg-green-50' : 'bg-red-50'}`}>
-              <span className={`font-medium ${loanEligibility.eligible ? 'text-green-700' : 'text-red-700'}`}>
-                {loanEligibility.eligible ? 'Eligible' : 'Not Eligible'}
-              </span>
-            </div>
-          </div>
-          
-          <div className="mb-6">
-            <div className="flex items-end gap-4 mb-3">
+      </DashboardLayout>
+    );
+  }
+
+  const getHealthColor = (score: number) => {
+    if (score >= 80) return { label: 'Excellent', color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-200' };
+    if (score >= 60) return { label: 'Good', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200' };
+    if (score >= 40) return { label: 'Average', color: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-yellow-200' };
+    return { label: 'Poor', color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' };
+  };
+
+  // Hardcoded data with rich metrics
+  const mockDashboard = {
+    health_score: { score: 74, label: 'Good' },
+    active_insights: 2,
+    loan_eligibility_score: 85,
+    growth_potential: 37,
+    recommendations_count: 5,
+    checklist_tasks: 8,
+    available_schemes: 4,
+    key_metric: 'You are on track for growth - Your profit margin increased by 12% this month. Consider expanding to new product categories.',
+  };
+
+  const displayDashboard = dashboard || mockDashboard;
+  const healthStatus = getHealthColor(displayDashboard?.health_score?.score || 0);
+
+  const aiFeatures = [
+    {
+      id: 'insights',
+      title: 'Business Insights',
+      description: 'Smart insights about your expenses, revenue, and inventory',
+      icon: <Lightbulb size={32} className="text-orange-500" />,
+      count: displayDashboard?.active_insights || 2,
+      color: 'from-orange-50 to-red-50',
+      route: '/ai-insights'
+    },
+    {
+      id: 'loan',
+      title: 'Loan Eligibility',
+      description: 'Check your business loan eligibility and eligible amount',
+      icon: <DollarSign size={32} className="text-green-500" />,
+      score: displayDashboard?.loan_eligibility_score || 85,
+      color: 'from-green-50 to-teal-50',
+      route: '/ai-loan'
+    },
+    {
+      id: 'recommendations',
+      title: 'Smart Recommendations',
+      description: 'AI-powered recommendations to grow your business',
+      icon: <Zap size={32} className="text-violet-500" />,
+      count: displayDashboard?.recommendations_count || 5,
+      color: 'from-violet-50 to-purple-50',
+      route: '/ai-recommendations'
+    },
+    {
+      id: 'checklist',
+      title: 'Growth Checklist',
+      description: 'Track your business growth milestones and goals',
+      icon: <CheckSquare size={32} className="text-blue-500" />,
+      count: displayDashboard?.checklist_tasks || 8,
+      color: 'from-blue-50 to-indigo-50',
+      route: '/ai-checklist'
+    },
+    {
+      id: 'schemes',
+      title: 'Government Schemes',
+      description: 'Explore government loan schemes for your business',
+      icon: <Target size={32} className="text-pink-500" />,
+      count: displayDashboard?.available_schemes || 4,
+      color: 'from-pink-50 to-rose-50',
+      route: '/ai-schemes'
+    },
+    {
+      id: 'health',
+      title: 'Business Health',
+      description: 'Detailed analysis of your business health metrics',
+      icon: <Activity size={32} className="text-teal-500" />,
+      score: displayDashboard?.health_score?.score || 74,
+      color: 'from-teal-50 to-green-50',
+      route: '/ai-health'
+    }
+  ];
+
+  return (
+    <DashboardLayout title="AI Business Guidance">
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card padding="lg" className={`${healthStatus.bg} border-2 ${healthStatus.border}`}>
+            <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-[var(--color-gray-600)] mb-1">Eligible Amount</p>
-                <h2 className="text-[var(--color-navy)]">₹{(loanEligibility.amount / 100000).toFixed(1)}L</h2>
+                <p className="text-sm text-gray-600 mb-2">Business Health Score</p>
+                <p className={`text-3xl font-bold ${healthStatus.color}`}>{displayDashboard?.health_score?.score || 0}</p>
+                <p className={`text-xs font-semibold ${healthStatus.color} mt-1`}>{healthStatus.label}</p>
               </div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-[var(--color-gray-600)]">Eligibility Score</span>
-                  <span className="text-sm font-medium text-[var(--color-navy)]">{loanEligibility.score}/100</span>
-                </div>
-                <div className="w-full bg-[var(--color-gray-200)] rounded-full h-3">
-                  <div 
-                    className="bg-[var(--color-teal)] h-3 rounded-full transition-all"
-                    style={{ width: `${loanEligibility.score}%` }}
-                  ></div>
-                </div>
-              </div>
+              <Activity size={32} className={`${healthStatus.color} opacity-20`} />
             </div>
-          </div>
-          
-          <div className="space-y-3">
-            {loanEligibility.factors.map((factor, index) => (
-              <div key={index} className="flex items-start gap-3 p-3 bg-[var(--color-gray-50)] rounded-lg">
-                <div className="mt-1">
-                  {factor.status === 'good' ? (
-                    <CheckCircle size={20} className="text-green-600" />
-                  ) : (
-                    <AlertCircle size={20} className="text-yellow-600" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium text-[var(--color-gray-900)] mb-1">{factor.name}</p>
-                  <p className="text-sm text-[var(--color-gray-600)]">{factor.description}</p>
-                </div>
+          </Card>
+
+          <Card padding="lg" className="bg-gradient-to-br from-orange-50 to-red-50 border-2 border-orange-200">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-2">Active Insights</p>
+                <p className="text-3xl font-bold text-orange-600">{displayDashboard?.active_insights || 0}</p>
+                <p className="text-xs text-orange-600 font-semibold mt-1">New opportunities found</p>
+              </div>
+              <Lightbulb size={32} className="text-orange-400 opacity-20" />
+            </div>
+          </Card>
+
+          <Card padding="lg" className="bg-gradient-to-br from-green-50 to-teal-50 border-2 border-green-200">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-2">Loan Eligibility</p>
+                <p className="text-3xl font-bold text-green-600">{displayDashboard?.loan_eligibility_score || 0}</p>
+                <p className="text-xs text-green-600 font-semibold mt-1">Out of 100</p>
+              </div>
+              <DollarSign size={32} className="text-green-400 opacity-20" />
+            </div>
+          </Card>
+
+          <Card padding="lg" className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-2">Growth Potential</p>
+                <p className="text-3xl font-bold text-purple-600">{displayDashboard?.growth_potential || 0}%</p>
+                <p className="text-xs text-purple-600 font-semibold mt-1">Upside potential</p>
+              </div>
+              <TrendingUp size={32} className="text-purple-400 opacity-20" />
+            </div>
+          </Card>
+        </div>
+
+        <div>
+          <h2 className="text-2xl font-bold mb-4 text-gray-900">AI-Powered Modules</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {aiFeatures.map((feature) => (
+              <div key={feature.id} onClick={() => navigate(feature.route)}>
+                <Card padding="lg" className={`bg-gradient-to-br ${feature.color} border-2 border-gray-200 cursor-pointer hover:shadow-lg transition-all hover:border-violet-300`}>
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="bg-white p-3 rounded-lg">{feature.icon}</div>
+                    {feature.count !== undefined && <StatusBadge status={feature.count > 0 ? 'success' : 'neutral'}>{feature.count}</StatusBadge>}
+                    {feature.score !== undefined && <StatusBadge status={feature.score >= 60 ? 'success' : 'warning'}>{feature.score}</StatusBadge>}
+                  </div>
+                  <h3 className="font-bold text-lg mb-2 text-gray-900">{feature.title}</h3>
+                  <p className="text-sm text-gray-700 mb-4">{feature.description}</p>
+                  <div className="flex items-center gap-2 text-sm font-semibold text-violet-600 hover:text-violet-700">Explore <span>→</span></div>
+                </Card>
               </div>
             ))}
           </div>
-          
-          <div className="mt-6 pt-6 border-t border-[var(--color-gray-200)]">
-            <Button variant="primary" size="md">
-              Apply for Business Loan
-              <ExternalLink size={16} className="ml-2" />
-            </Button>
-          </div>
-        </Card>
-        
-        {/* Growth Checklist */}
+        </div>
+
+        {displayDashboard?.key_metric && (
+          <Card padding="lg" className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300">
+            <div className="flex gap-4">
+              <BarChart3 size={32} className="text-blue-600 flex-shrink-0" />
+              <div>
+                <h3 className="font-bold text-blue-900 mb-2">AI Recommendation</h3>
+                <p className="text-blue-800">{displayDashboard.key_metric}</p>
+              </div>
+            </div>
+          </Card>
+        )}
+
         <Card padding="lg">
-          <div className="mb-6">
-            <h3 className="mb-1">Growth Checklist</h3>
-            <p className="text-sm text-[var(--color-gray-600)]">Your business expansion roadmap</p>
-          </div>
-          
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-[var(--color-gray-600)]">Progress</span>
-              <span className="text-sm font-medium text-[var(--color-navy)]">{completedTasks}/{growthChecklist.length}</span>
+          <h3 className="font-bold text-lg mb-4">🚀 Getting Started</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="border-l-4 border-l-violet-500 pl-4">
+              <p className="font-semibold text-gray-900 mb-2">1. Review Your Insights</p>
+              <p className="text-sm text-gray-700">Start by exploring the Business Insights section to understand your finances better.</p>
             </div>
-            <div className="w-full bg-[var(--color-gray-200)] rounded-full h-2">
-              <div 
-                className="bg-[var(--color-teal)] h-2 rounded-full transition-all"
-                style={{ width: `${progressPercentage}%` }}
-              ></div>
+            <div className="border-l-4 border-l-rose-500 pl-4">
+              <p className="font-semibold text-gray-900 mb-2">2. Check Loan Options</p>
+              <p className="text-sm text-gray-700">Explore your loan eligibility and government schemes available for your business type.</p>
             </div>
-          </div>
-          
-          <div className="space-y-2">
-            {growthChecklist.map((item, index) => (
-              <div key={index} className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={item.completed}
-                  readOnly
-                  className="w-5 h-5 rounded border-[var(--color-gray-300)] text-[var(--color-teal)] focus:ring-[var(--color-teal)]"
-                />
-                <span className={`text-sm ${item.completed ? 'text-[var(--color-gray-500)] line-through' : 'text-[var(--color-gray-700)]'}`}>
-                  {item.task}
-                </span>
-              </div>
-            ))}
+            <div className="border-l-4 border-l-orange-500 pl-4">
+              <p className="font-semibold text-gray-900 mb-2">3. Follow Recommendations</p>
+              <p className="text-sm text-gray-700">Implement AI recommendations to improve your business metrics and health score.</p>
+            </div>
           </div>
         </Card>
       </div>
-      
-      {/* AI Recommendations */}
-      <Card padding="lg" className="mb-8">
-        <div className="flex items-center gap-3 mb-6">
-          <Lightbulb size={24} className="text-[var(--color-teal)]" />
-          <div>
-            <h3 className="mb-1">AI Business Recommendations</h3>
-            <p className="text-sm text-[var(--color-gray-600)]">Actionable insights to grow your business</p>
-          </div>
-        </div>
-        
-        <div className="grid lg:grid-cols-3 gap-6">
-          {recommendations.map((rec, index) => (
-            <div key={index} className="border border-[var(--color-gray-200)] rounded-lg p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-[var(--color-navy)]">{rec.category}</h4>
-                <span className={`px-2 py-1 rounded text-xs font-medium ${
-                  rec.priority === 'high' 
-                    ? 'bg-red-50 text-red-700' 
-                    : 'bg-yellow-50 text-yellow-700'
-                }`}>
-                  {rec.priority.toUpperCase()}
-                </span>
-              </div>
-              <ul className="space-y-3">
-                {rec.insights.map((insight, idx) => (
-                  <li key={idx} className="flex items-start gap-2 text-sm text-[var(--color-gray-700)]">
-                    <Target size={16} className="text-[var(--color-teal)] mt-0.5 flex-shrink-0" />
-                    <span>{insight}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </Card>
-      
-      {/* Government Schemes */}
-      <Card padding="lg">
-        <div className="mb-6">
-          <h3 className="mb-1">Government Schemes & Benefits</h3>
-          <p className="text-sm text-[var(--color-gray-600)]">Financial support programs available for your business</p>
-        </div>
-        
-        <div className="grid lg:grid-cols-2 gap-4">
-          {governmentSchemes.map((scheme, index) => (
-            <div key={index} className="border border-[var(--color-gray-200)] rounded-lg p-5 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h4 className="text-[var(--color-navy)] mb-1">{scheme.name}</h4>
-                  <p className="text-sm text-[var(--color-gray-600)]">{scheme.type}</p>
-                </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                  scheme.eligibility === 'High' 
-                    ? 'bg-green-50 text-green-700' 
-                    : 'bg-yellow-50 text-yellow-700'
-                }`}>
-                  {scheme.eligibility} Match
-                </span>
-              </div>
-              
-              <p className="text-sm text-[var(--color-gray-700)] mb-3">{scheme.description}</p>
-              
-              <div className="flex items-center justify-between pt-3 border-t border-[var(--color-gray-200)]">
-                <span className="text-sm font-medium text-[var(--color-navy)]">Max: {scheme.maxAmount}</span>
-                <Button variant="outline" size="sm">
-                  Learn More
-                  <ExternalLink size={14} className="ml-2" />
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
     </DashboardLayout>
   );
 }
